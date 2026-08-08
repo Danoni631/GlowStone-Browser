@@ -11,3 +11,6 @@ GlowStone is a stable version of Internet Explorer with source-code don't based 
 
 ### WARNING
 You need install WebView2 to run and edit this browser
+
+### Overview
+<p align="center"><img src="scrshot.png"></p>
