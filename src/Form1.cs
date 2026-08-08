@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Globalization;
@@ -13,12 +13,18 @@ namespace Glowstone
         private ToolStripMenuItem menuLanguage;
         private Panel toolBar;
         private Button btnBack;
+        private Icon iconBack;
         private Button btnForward;
+        private Icon iconForward;
         private Button btnStop;
+        private Icon iconStop;
         private Button btnRefresh;
+        private Icon iconRefresh;
         private Button btnHome;
+        private Icon iconHome;
         private TextBox txtAddress;
         private Button btnGo;
+        private Icon iconGo;
         private StatusStrip statusStrip;
         private ToolStripStatusLabel statusLabel;
         private WebView2 webViewer;
@@ -42,7 +48,7 @@ namespace Glowstone
 
             translations["pt"] = new Dictionary<string, string>
             {
-                { "Title", "GlowStone 1.0" },
+                { "Title", "GlowStone versão 1.01" },
                 { "Back", " ⇦ Voltar" },
                 { "Forward", "⇨ Avançar" },
                 { "Stop", "✕ Parar" },
@@ -56,7 +62,7 @@ namespace Glowstone
 
             translations["en"] = new Dictionary<string, string>
             {
-                { "Title", "GlowStone 1.0" },
+                { "Title", "GlowStone version 1.01" },
                 { "Back", " ⇦ Back" },
                 { "Forward", "⇨ Forward" },
                 { "Stop", "✕ Stop" },
@@ -70,7 +76,7 @@ namespace Glowstone
 
             translations["es"] = new Dictionary<string, string>
             {
-                { "Title", "GlowStone 1.0" },
+                { "Title", "GlowStone versión 1.01" },
                 { "Back", " ⇦ Atrás" },
                 { "Forward", "⇨ Adelante" },
                 { "Stop", "✕ Detener" },
@@ -151,7 +157,14 @@ namespace Glowstone
             };
             btnGo.Click += (s, e) => NavigateToUrl();
 
-            toolBar.Controls.AddRange(new Control[] { btnBack, btnForward, btnStop, btnRefresh, btnHome, txtAddress, btnGo });
+            toolBar.Controls.AddRange
+            (
+                new Control[]
+                {
+                   btnBack, btnForward, btnStop,
+                   btnRefresh, btnHome, txtAddress, btnGo
+                }
+            );
 
             statusStrip = new StatusStrip { BackColor = ieClassicGray };
             statusLabel = new ToolStripStatusLabel { Font = new Font("Tahoma", 8) };
@@ -223,7 +236,8 @@ namespace Glowstone
         private async void InitializeWebView()
         {
             await webViewer.EnsureCoreWebView2Async(null);
-            webViewer.CoreWebView2.Navigate("https://www.google.com");
+            //YOU CAN CHANGE THE PATH TO LOAD HOMEPAGE
+            webViewer.CoreWebView2.Navigate("file://C:/users/danun/source/repos/GlowStone/GlowStone/homepage/main.html");
         }
 
         private void NavigateToUrl()
