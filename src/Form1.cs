@@ -41,7 +41,6 @@ namespace Glowstone
 
         private string currentLang = "en";
         private Dictionary<string, Dictionary<string, string>> translations;
-        private object webView;
         private readonly Color ieClassicGray = Color.FromArgb(241, 239, 226);
 
         private const string ServerURL = "http://localhost:4650";
@@ -149,11 +148,19 @@ namespace Glowstone
                 Padding = new Padding(5)
             };
 
+            secondtoolBar = new Panel
+            {
+                Dock = DockStyle.Top,
+                Height = 45,
+                BackColor = ieClassicGray,
+                Padding = new Padding(5)
+            };
+
             btnBack = CreateIEButton(0);
             btnBack.Click += (s, e) =>
             {
                 if
-                (webViewer?.CoreWebView2 != null && webViewer.CanGoBack) webViewer.GoBack(); 
+                (webViewer?.CoreWebView2 != null && webViewer.CanGoBack) webViewer.GoBack();
             };
 
             btnForward = CreateIEButton(80);
@@ -179,8 +186,8 @@ namespace Glowstone
 
             txtAddress = new TextBox
             {
-                Location = new Point(395, 12),
-                Width = 500,
+                Location = new Point(130, 12),
+                Width = 2,
                 Font = new Font("Tahoma", 10),
                 Anchor = AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top
             };
@@ -188,13 +195,22 @@ namespace Glowstone
 
             btnGo = new Button
             {
-                Location = new Point(900, 10),
+                Location = new Point(150, 10),
                 Size = new Size(40, 25),
                 Font = new Font("Tahoma", 8, FontStyle.Bold),
                 Anchor = AnchorStyles.Right | AnchorStyles.Top,
                 FlatStyle = FlatStyle.System
             };
             btnGo.Click += (s, e) => NavigateToUrl();
+
+            lblAddress = new Label
+            {
+                Location = new Point(20, 10),
+                Size = new Size(100, 25),
+                Font = new Font("Tahoma", 16, FontStyle.Regular),
+                Anchor = AnchorStyles.Left | AnchorStyles.Top,
+                FlatStyle = FlatStyle.System
+            };
 
             toolBar.Controls.AddRange
             (
@@ -209,7 +225,7 @@ namespace Glowstone
             (
                 new Control[]
                 {
-                    txtAddress, lblAddress, btnGo
+                    lblAddress, txtAddress, btnGo
                 }
             );
 
@@ -219,11 +235,13 @@ namespace Glowstone
 
             webViewer = new WebView2 { Dock = DockStyle.Fill };
 
-            webViewer.NavigationStarting += (s, e) => {
+            webViewer.NavigationStarting += (s, e) =>
+            {
                 statusLabel.Text = string.Format(translations[currentLang]["StatusLoading"], e.Uri);
             };
 
-            webViewer.NavigationCompleted += (s, e) => {
+            webViewer.NavigationCompleted += (s, e) =>
+            {
                 statusLabel.Text = translations[currentLang]["StatusDone"];
                 if (webViewer.Source != null)
                     txtAddress.Text = webViewer.Source.ToString();
@@ -232,6 +250,7 @@ namespace Glowstone
             ApplyLanguageStrings();
 
             this.Controls.Add(webViewer);
+            this.Controls.Add(secondtoolBar);
             this.Controls.Add(toolBar);
             this.Controls.Add(menuStrip);
             this.Controls.Add(statusStrip);
@@ -266,7 +285,7 @@ namespace Glowstone
 
             btnGo.Text = langDict["Go"];
             lblAddress.Text = langDict["LabelAddr"];
-         
+
 
             if (webViewer?.CoreWebView2 == null || !webViewer.CanGoBack && !webViewer.CanGoForward)
             {
@@ -288,7 +307,7 @@ namespace Glowstone
             await webViewer.EnsureCoreWebView2Async(null);
             webViewer.CoreWebView2.Navigate
             (ServerURL);
-            
+
             // Don't used the path more, now we use server becuase the path only works on my computer
         }
 
@@ -305,7 +324,7 @@ namespace Glowstone
 
             webViewer?.CoreWebView2?.Navigate(url);
         }
-    
+
         private void ShowAboutBox()
         {
             var langDict = translations[currentLang];
@@ -318,6 +337,6 @@ namespace Glowstone
                 MessageBoxIcon.Information
             );
         }
-    
+
     }
 }
