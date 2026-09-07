@@ -1,20 +1,25 @@
 /*
- * My Computer is a shit (Celeron Dual Core with 4GB RAM)
- * My Wi-fi is a shit
- * I'm bad on CSharp
- * The pain i gonna feel coding this
+ * Now, Glowstone 1.03
  * 
- * So... Version 1.02 (I've tested installation Setup and don't worked)
+ * CHANGES:
+ * homepage widgets language bug fixed
+ * minimal ui changes
 */
 
+using Glowstone;
+using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.WinForms;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
+using System.Drawing.Drawing2D;
+using System.Drawing.Imaging;
 using System.Globalization;
 using System.IO;
 using System.Net.Http;
+using System.Runtime.InteropServices;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -25,6 +30,7 @@ namespace Glowstone
         private MenuStrip menuStrip;
         private ToolStripMenuItem menuLanguage;
         private ToolStripMenuItem menuHelp;
+        private ToolStripMenuItem menuSpecial;
         private Panel toolBar;
         private Panel secondtoolBar;
         private Button btnBack;
@@ -35,18 +41,68 @@ namespace Glowstone
         private TextBox txtAddress;
         private Label lblAddress;
         private Button btnGo;
+        private Label lblErr;
         private StatusStrip statusStrip;
         private ToolStripStatusLabel statusLabel;
         private WebView2 webViewer;
+
+        // BYTEBEAT DEFS
+        [DllImport("winmm.dll")]
+        public static extern int waveOutOpen
+        (
+            out IntPtr hwo,
+            uint uDeviceID,
+            ref WaveFormat lpFormat,
+            IntPtr dwCallback,
+            IntPtr dwInstance,
+            uint dwFlags
+        );
+
+        [DllImport("winmm.dll")]
+        public static extern int waveOutPrepareHeader
+        (
+            IntPtr hwo,
+            ref WaveHeader lpWaveOutHdr,
+            uint uSize
+        );
+
+        [DllImport("winmm.dll")]
+        public static extern int waveOutWrite(IntPtr hwo, ref WaveHeader lpWaveOutHdr, uint uSize);
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct WaveFormat
+        {
+            public short wFormatTag; public short nChannels; public int nSamplesPerSec;
+            public int nAvgBytesPerSec; public short nBlockAlign;
+            public short wBitsPerSample; public short cbSize;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct WaveHeader
+        {
+            public IntPtr lpData; public uint dwBufferLength; public uint dwBytesRecorded;
+            public IntPtr dwUser; public uint dwFlags; public uint dwLoops;
+            public IntPtr lpNext; public IntPtr reserved;
+        }
 
         private string currentLang = "en";
         private Dictionary<string, Dictionary<string, string>> translations;
         private readonly Color ieClassicGray = Color.FromArgb(241, 239, 226);
 
         private const string ServerURL = "http://localhost:4650";
-
         public Form1()
         {
+            Exception ex = null;
+
+            Application.ThreadException += (s, e) =>
+            ShowErrorCodeDialog("GUI_THREAD_EXCEPTION", ex.Message);
+
+            AppDomain.CurrentDomain.UnhandledException += (s, e) =>
+            {
+                if (e.ExceptionObject is null)
+                ShowErrorCodeDialog("UNHANDLED_DOMAIN_EXCEPTION", ex.Message);
+            };
+
             InitializeTranslations();
             DetectSystemLanguage();
             InitializeComponentLayout();
@@ -59,56 +115,56 @@ namespace Glowstone
 
             translations["pt"] = new Dictionary<string, string>
             {
-                { "Title", "GlowStone 1.02" },
+                { "Title", "GlowStone versão 1.03" },
                 { "Back", " ⇦ Voltar" },
                 { "Forward", "⇨ Avançar" },
                 { "Stop", "✕ Parar" },
                 { "Refresh", "↻ Atualizar" },
                 { "Home", "⌂ Inicial" },
-                { "Go", "Ir" },
+                { "Go", "⇨ Ir" },
                 { "StatusDone", "Concluído" },
                 { "StatusLoading", "Abrindo a página {0}..." },
                 { "MenuLang", "&Idioma" },
+                { "MenuHelp", "&Ajuda" },
                 { "LabelAddr", "Endereço" },
-                { "AboutTitle", "Sobre" },
-                { "AboutText", "GlowStone 1.02\n\nDesenvolvedor: Danoni631" }
+                { "MenuSpecial", "Especial" },
+                { "LblError",  "Ocorreu um erro no GlowStone!\n\nCódigo de erro:"}
             };
 
             translations["en"] = new Dictionary<string, string>
             {
-                { "Title", "GlowStone 1.02" },
+                { "Title", "GlowStone version 1.03" },
                 { "Back", " ⇦ Back" },
                 { "Forward", "⇨ Forward" },
                 { "Stop", "✕ Stop" },
                 { "Refresh", "↻ Refresh" },
                 { "Home", "⌂ Home" },
-                { "Go", "Go" },
+                { "Go", "⇨ Go" },
                 { "StatusDone", "Done" },
                 { "StatusLoading", "Opening page {0}..." },
                 { "MenuLang", "&Language" },
                 { "MenuHelp", "&Help" },
                 { "LabelAddr", "Address" },
-                { "AboutTitle", "About" },
-                { "AboutText", "GlowStone 1.02\n\nDeveloper: Danoni631" }
+                { "MenuSpecial", "Special" },
+                { "LblError",  "A error ocurred on GlowStone!\n\nError code: "}
             };
 
             translations["es"] = new Dictionary<string, string>
             {
-                { "Title", "GlowStone 1.02" },
+                { "Title", "GlowStone versión 1.03" },
                 { "Back", " ⇦ Atrás" },
                 { "Forward", "⇨ Adelante" },
                 { "Stop", "✕ Detener" },
                 { "Refresh", "↻ Actualizar" },
                 { "Home", "⌂ Inicio" },
-                { "Go", "Ir" },
+                { "Go", "⇨ Ir" },
                 { "StatusDone", "Listo" },
                 { "StatusLoading", "Abriendo la página {0}..." },
                 { "MenuLang", "&Idioma" },
                 { "MenuHelp", "&Ayuda" },
                 { "LabelAddr", "Dirección" },
-                { "AboutTitle", "Sobre" },
-                { "AboutText", "GlowStone versión 1.02\n\nNavegador hecho desde cero, de código abierto, para ser una imitación estable del Internet Explorer con motor Edge/WebView2 y así lograr un mejor rendimiento que el Internet Explorer original.\n\nEl Internet Explorer original fue hecho por Microsoft y este navegador no tiene nada de su código.\n\n© Danoni631 - 2026-2026" },
-
+                { "MenuSpecial", "Especial" },
+                { "LblError",  "Un error aconteció en GlowStone\n\nCódigo de error:"}
             };
         }
 
@@ -136,9 +192,52 @@ namespace Glowstone
             var menuEs = new ToolStripMenuItem("Español", null, (s, e) => ChangeLanguage("es"));
 
             menuLanguage.DropDownItems.AddRange(new ToolStripItem[] { menuPt, menuEn, menuEs });
-            menuStrip.Items.Add(menuLanguage);
 
-            var menuAbout = new ToolStripMenuItem("Sobre | About | Sobre", null, (s, e) => ShowAboutBox());
+            //var menuPlaceHolder = new ToolStripMenuItem("placeholder", null, (s, e) => Placeholder());
+            var menuBytebeat = new ToolStripMenuItem("Bytebeat", null, (s, e) => StartBytebeats());
+
+            var menuNewThings =
+            new ToolStripMenuItem
+            (
+                "Coisas novas" +
+                " | " +
+                "New things" +
+                " | " +
+                "Cosas nuevas",
+                null,
+                (s, e) => NewThings()
+            );
+
+            var menuAbout =
+            new ToolStripMenuItem
+            (
+                "Sobre | About | Sobre",
+                null,
+                (s, e) => ShowAboutBox()
+            );
+
+            menuHelp = new ToolStripMenuItem();
+            menuHelp.DropDownItems.AddRange
+            (
+                new ToolStripItem[]
+                {
+                    menuNewThings,
+                    menuAbout
+                }
+            );
+
+            menuSpecial = new ToolStripMenuItem();
+            menuSpecial.DropDownItems.AddRange
+            (
+                new ToolStripItem[]
+                {
+                    menuBytebeat
+                }
+            );
+
+            menuStrip.Items.Add(menuLanguage);
+            menuStrip.Items.Add(menuHelp);
+            menuStrip.Items.Add(menuSpecial);
 
             toolBar = new Panel
             {
@@ -173,7 +272,7 @@ namespace Glowstone
             btnStop = CreateIEButton(160);
             btnStop.Click += (s, e) => webViewer?.CoreWebView2?.Stop();
 
-            btnRefresh = CreateIEButton(230);
+            btnRefresh = CreateIEButton(240);
             btnRefresh.Click += (s, e) => webViewer?.Reload();
 
             btnHome = CreateIEButton(310);
@@ -262,7 +361,7 @@ namespace Glowstone
             return new Button
             {
                 Location = new Point(xPosition, 8),
-                Size = new Size(75, 28),
+                Size = new Size(85, 28),
                 FlatStyle = FlatStyle.Flat,
                 FlatAppearance = { BorderSize = 0 },
                 Font = new Font("Tahoma", 8.5f),
@@ -276,7 +375,9 @@ namespace Glowstone
             var langDict = translations[currentLang];
 
             this.Text = langDict["Title"];
-            menuLanguage.Text = langDict["MenuLang"];
+            this.menuLanguage.Text = langDict["MenuLang"];
+            this.menuHelp.Text = langDict["MenuHelp"];
+            this.menuSpecial.Text = langDict["MenuSpecial"];
             btnBack.Text = langDict["Back"];
             btnForward.Text = langDict["Forward"];
             btnStop.Text = langDict["Stop"];
@@ -285,7 +386,7 @@ namespace Glowstone
 
             btnGo.Text = langDict["Go"];
             lblAddress.Text = langDict["LabelAddr"];
-
+            //lblErr.Text = langDict["LblError"];
 
             if (webViewer?.CoreWebView2 == null || !webViewer.CanGoBack && !webViewer.CanGoForward)
             {
@@ -304,7 +405,9 @@ namespace Glowstone
 
         private async void InitializeWebView()
         {
+            //webViewer.CoreWebView2.ProcessFailed += OnWebViewProcessFailed;
             await webViewer.EnsureCoreWebView2Async(null);
+            webViewer.CoreWebView2.ProcessFailed += OnWebViewProcessFailed;
             webViewer.CoreWebView2.Navigate
             (ServerURL);
 
@@ -325,18 +428,241 @@ namespace Glowstone
             webViewer?.CoreWebView2?.Navigate(url);
         }
 
+
+        /*
+        private void Placeholder()
+        {
+            var langDict = translations[currentLang];
+
+            MessageBox.Show
+            (
+                "test", "test",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Information
+            );
+        }
+        */
+
+
+        private void NewThings()
+        {
+            var langDict = translations[currentLang];
+
+            MessageBox.Show
+            (
+                "POR: Menu sobre, mudanças na UI, mudanças na homepage, essa janela, coisas especiais," +
+                "\n\n" +
+                "ENG: Menu about, UI changes, homepage changes, this window\n\n" +
+                "ESP: Menu sobre, cambios na UI, cambios na homepage, esa ventana",
+                "Novas coisas | New things | Nuevas cosas",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Information
+            );
+        }
+
         private void ShowAboutBox()
         {
             var langDict = translations[currentLang];
 
             MessageBox.Show
             (
-                langDict["AboutText"],
-                langDict["AboutTitle"],
+                "GlowStone v1.03\n\nBuild 1.03.0018 (No RTM Escrow)\n\n" +
+                "POR: O GlowStone existe para ser uma versão mais estável do Internet Explorer. " +
+                "Sendo de código totalmente diferente do Internet Explorer, sendo aberto.\n\n" +
+                "ENG: The GlowStone exist to be a version more stable of Internet Explorer. " +
+                "Having a code diferent of Internet Explorer, being open-source.\n\n" +
+                "ESP: GlowStone existe para ser una versión más estable de Internet Explorer." +
+                "Es de código totalmente diferente al de Internet Explorer y es abierto.",
+                "Sobre | About | Sobre",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Information
             );
+
+            /*
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
+            Application.Run(new AboutBox1());
+            */
         }
 
+        public void StartBytebeats()
+        {
+            int sampleRate = 8000;
+            int bufferSize = 4000;
+
+            WaveFormat fmt = new WaveFormat
+            {
+                wFormatTag = 1,
+                nChannels = 1,
+                nSamplesPerSec = sampleRate,
+                nAvgBytesPerSec = sampleRate,
+                nBlockAlign = 1,
+                wBitsPerSample = 8,
+                cbSize = 0
+            };
+
+            if (waveOutOpen(out IntPtr hwo, 0xFFFFFFFF, ref fmt, IntPtr.Zero, IntPtr.Zero, 0) == 0)
+            {
+                uint t = 0;
+                while (true)
+                {
+                    byte[] buffer = new byte[bufferSize];
+
+                    for (int i = 0; i < bufferSize; i++)
+                    {
+                        // I tried to use this bytebeat (t * t) >> (t / 257)
+                        // Is a laser gun
+                        buffer[i] = (byte)
+                        (
+                            (
+                                t *
+                                (1 + (1 + (t >> 16) % 6) * (t >> 10) *
+                                (t >> 11) % 8) ^ t >> 13 ^ t >> 6
+                            ) + t
+                        );
+                        t++;
+                    }
+
+                    GCHandle pinnedArray = GCHandle.Alloc(buffer, GCHandleType.Pinned);
+                    WaveHeader header = new WaveHeader
+                    {
+                        lpData = pinnedArray.AddrOfPinnedObject(),
+                        dwBufferLength = (uint)bufferSize
+                    };
+
+                    waveOutPrepareHeader(hwo, ref header, (uint)Marshal.SizeOf(header));
+                    waveOutWrite(hwo, ref header, (uint)Marshal.SizeOf(header));
+
+                    Thread.Sleep(500);
+                    pinnedArray.Free();
+                }
+            }
+        }
+
+        private void OnWebViewProcessFailed(object sender, CoreWebView2ProcessFailedEventArgs e)
+        {
+            string errorCode = $"WEBVIEW_CRASH_{e.ProcessFailedKind}";
+            string errorDetails = $"Fail type: {e.ProcessFailedKind}\r\n" +
+                                  $"Exit Code: {e.ExitCode}\r\n" +
+                                  $"Shutdown reason: {e.Reason}";
+
+            ShowErrorCodeDialog(errorCode, errorDetails, null);
+
+            try
+            {
+                webViewer.Reload();
+            }
+            catch
+            {
+                InitializeWebView();
+            }
+        }
+
+        private void ShowErrorCodeDialog(string errorCode, string details, Exception ex = null)
+        {
+            string hexCode = $"0x{Math.Abs(errorCode.GetHashCode()):X8}";
+
+            var log = new System.Text.StringBuilder();
+            log.AppendLine($"[ERROR CODE]: {hexCode}");
+            log.AppendLine($"[IDENTIFIER]: {errorCode}");
+            log.AppendLine(new string('-', 60));
+            log.AppendLine("[PROCESS DETAILS / CONTEXT]:");
+            log.AppendLine(details);
+
+            if (ex != null)
+            {
+                log.AppendLine(new string('-', 60));
+                log.AppendLine($"[EXCEPTION TYPE]: {ex.GetType().FullName}");
+                log.AppendLine($"[ERROR MESSAGE]: {ex.Message}");
+
+                if (ex.InnerException != null)
+                {
+                    log.AppendLine($"[INTERN EXCEPTION]: {ex.InnerException.Message}");
+                }
+
+                log.AppendLine(new string('-', 60));
+                log.AppendLine("[COMPLETE STACK TRACE]:");
+                log.AppendLine(ex.StackTrace ?? "No StackTrace disponible");
+            }
+
+            Form crashForm = new Form
+            {
+                Text = "Erro Crítico | Critical Error | Error Crítico",
+                Size = new Size(640, 480),
+                StartPosition = FormStartPosition.CenterParent,
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+                MaximizeBox = false,
+                MinimizeBox = false,
+                BackColor = ieClassicGray
+            };
+
+            Label lblIcon = new Label
+            {
+                Text = "⚠️",
+                Font = new Font("Segoe UI Emoji", 28),
+                Location = new Point(15, 15),
+                AutoSize = true
+            };
+
+            lblErr = new Label
+            {
+                Text = "A error ocurred on GlowStone!\n\n" +
+                "Possible causes: Memory burst, a component failed or Chromium/Web crashed.\n\n" +
+                "If the error persists, go to GlowStone github repository and make a issue" +
+                "reporting this error for creator (Danoni631).",
+                Font = new Font("Tahoma", 8.5f, FontStyle.Bold),
+                Location = new Point(95, 15),
+                Size = new Size(380, 110),
+                ForeColor = Color.Black
+            };
+
+            TextBox txtDetails = new TextBox
+            {
+                Multiline = true,
+                ReadOnly = true,
+                ScrollBars = ScrollBars.Vertical,
+                Text = log.ToString(),
+                Font = new Font("Consolas", 8.5f),
+                Location = new Point(15, 130),
+                Size = new Size(595, 260)
+            };
+
+            Button btnClose = new Button
+            {
+                Text = "OK",
+                Location = new Point(20, 400),
+                Size = new Size(80, 25),
+                FlatStyle = FlatStyle.System,
+                DialogResult = DialogResult.OK
+            };
+
+            Button btnCpy = new Button
+            {
+                Text = "Copy error",
+                Location = new Point(90, 400),
+                Size = new Size(80, 25),
+                FlatStyle = FlatStyle.System,
+            };
+
+            btnCpy.Click += (s, e) =>
+            {
+                Clipboard.SetText(txtDetails.Text);
+                MessageBox.Show
+                (
+                    "Error code copied",
+                    "Copied",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information
+                );
+            };
+
+            crashForm.Controls.Add(lblIcon);
+            crashForm.Controls.Add(lblErr);
+            crashForm.Controls.Add(txtDetails);
+            crashForm.Controls.Add(btnClose);
+            crashForm.AcceptButton = btnClose;
+
+            crashForm.ShowDialog(this);
+        }
     }
 }
