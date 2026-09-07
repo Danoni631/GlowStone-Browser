@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clima em Tempo Real</title>
+  <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+<body>
+  <script src="translate.js"></script>
+  <script src="weather_functions.js"></script>
+  <div class="card">
+    <select id="langSelect" class="lang-selector" onchange="changeLanguage()">
+      <option value="pt">PT</option>
+      <option value="en">EN</option>
+      <option value="es">ES</option>
+    </select>
+    <div id="content" class="status">Obtendo sua localização...</div>
+  </div>
+  
+</body>
+</html>
