@@ -6,7 +6,6 @@
  * minimal ui changes
 */
 
-using Glowstone;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.WinForms;
 using System;
@@ -15,6 +14,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
+using System.Drawing.Text;
 using System.Globalization;
 using System.IO;
 using System.Net.Http;
@@ -23,7 +23,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace Glowstone
+namespace GlowStone
 {
     public partial class Form1 : Form
     {
@@ -41,6 +41,7 @@ namespace Glowstone
         private TextBox txtAddress;
         private Label lblAddress;
         private Button btnGo;
+        private Button btnKotost;
         private Label lblErr;
         private StatusStrip statusStrip;
         private ToolStripStatusLabel statusLabel;
@@ -90,6 +91,7 @@ namespace Glowstone
         private readonly Color ieClassicGray = Color.FromArgb(241, 239, 226);
 
         private const string ServerURL = "http://localhost:4650";
+
         public Form1()
         {
             Exception ex = null;
@@ -100,7 +102,7 @@ namespace Glowstone
             AppDomain.CurrentDomain.UnhandledException += (s, e) =>
             {
                 if (e.ExceptionObject is null)
-                ShowErrorCodeDialog("UNHANDLED_DOMAIN_EXCEPTION", ex.Message);
+                    ShowErrorCodeDialog("UNHANDLED_DOMAIN_EXCEPTION", ex.Message);
             };
 
             InitializeTranslations();
@@ -182,10 +184,14 @@ namespace Glowstone
         {
             this.Size = new Size(1024, 768);
             this.BackColor = ieClassicGray;
-            this.Icon = SystemIcons.WinLogo;
+
+            System.ComponentModel.ComponentResourceManager resources =
+            new System.ComponentModel.ComponentResourceManager(typeof(Form1));
 
             menuStrip = new MenuStrip { BackColor = ieClassicGray };
             menuLanguage = new ToolStripMenuItem();
+
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
 
             var menuPt = new ToolStripMenuItem("Português", null, (s, e) => ChangeLanguage("pt"));
             var menuEn = new ToolStripMenuItem("English", null, (s, e) => ChangeLanguage("en"));
@@ -208,6 +214,12 @@ namespace Glowstone
                 (s, e) => NewThings()
             );
 
+            var menuProject = new ToolStripMenuItem
+            (
+                "Glowstone Project",
+                null, (s, e) => webViewer.CoreWebView2.Navigate("https://github.com/GlowStone-project")
+            );
+
             var menuAbout =
             new ToolStripMenuItem
             (
@@ -221,6 +233,7 @@ namespace Glowstone
             (
                 new ToolStripItem[]
                 {
+                    menuProject,
                     menuNewThings,
                     menuAbout
                 }
@@ -302,6 +315,17 @@ namespace Glowstone
             };
             btnGo.Click += (s, e) => NavigateToUrl();
 
+            btnKotost = new Button
+            {
+                Location = new Point(150, 10),
+                Size = new Size(40, 25),
+                Font = new Font("Comic Sans MS", 8, FontStyle.Bold),
+                Text = "Kotost",
+                Anchor = AnchorStyles.Right | AnchorStyles.Top,
+                FlatStyle = FlatStyle.System
+            };
+            btnKotost.Click += (s, e) => Kotost();
+
             lblAddress = new Label
             {
                 Location = new Point(20, 10),
@@ -316,7 +340,7 @@ namespace Glowstone
                 new Control[]
                 {
                     btnBack, btnForward, btnStop,
-                    btnRefresh, btnHome
+                    btnRefresh, btnHome, btnKotost
                 }
             );
 
@@ -451,9 +475,12 @@ namespace Glowstone
             MessageBox.Show
             (
                 "POR: Menu sobre, mudanças na UI, mudanças na homepage, essa janela, coisas especiais," +
+                "mais adições de ícones, primeiro easter egg (Kotost)" +
                 "\n\n" +
-                "ENG: Menu about, UI changes, homepage changes, this window\n\n" +
-                "ESP: Menu sobre, cambios na UI, cambios na homepage, esa ventana",
+                "ENG: Menu about, UI changes, homepage changes, this window, special things," +
+                "more icons addictions, first easter egg (Kotost)\n\n" +
+                "ESP: Menu sobre, cambios na UI, cambios na homepage, esa ventana, cosas especiais" +
+                "primeiro éaster egg (Kotost) ",
                 "Novas coisas | New things | Nuevas cosas",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Information
@@ -466,15 +493,15 @@ namespace Glowstone
 
             MessageBox.Show
             (
-                "GlowStone v1.03\n\nBuild 1.03.0018 (No RTM Escrow)\n\n" +
+                "GlowStone v1.03\n\nBuild 1.03.0022\n\n" +
                 "POR: O GlowStone existe para ser uma versão mais estável do Internet Explorer. " +
                 "Sendo de código totalmente diferente do Internet Explorer, sendo aberto.\n\n" +
                 "ENG: The GlowStone exist to be a version more stable of Internet Explorer. " +
                 "Having a code diferent of Internet Explorer, being open-source.\n\n" +
-                "ESP: GlowStone existe para ser una versión más estable de Internet Explorer." +
-                "Es de código totalmente diferente al de Internet Explorer y es abierto.",
+                "ESP: GlowStone existe para ser una versión más estable de Internet Explorer. " +
+                "Es de código totalmente diferente al de Internet Explorer y es abierto. ",
                 "Sobre | About | Sobre",
-                MessageBoxButtons.OK,
+                MessageBoxButtons.OK, 
                 MessageBoxIcon.Information
             );
 
@@ -663,6 +690,37 @@ namespace Glowstone
             crashForm.AcceptButton = btnClose;
 
             crashForm.ShowDialog(this);
+        }
+
+        private Form KotostWindows;
+
+        private void Kotost()
+        {
+            System.ComponentModel.ComponentResourceManager resources =
+            new System.ComponentModel.ComponentResourceManager(typeof(Form1));
+
+            KotostWindows = new Form
+            {
+                Text = "K O T O S T",
+                Size = new Size(800, 600),
+                StartPosition = FormStartPosition.CenterParent,
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+                MaximizeBox = false,
+                MinimizeBox = false,
+                BackColor = ieClassicGray
+            };
+
+            Label KotostLabel = new Label
+            {
+                Text = "KOTOST KOTOST",
+                Size = new Size(640, 480),
+                Location = new Point(400, 300),
+                Font = new Font("Comic Sans MS", 15.0f, FontStyle.Regular),
+                ForeColor = Color.Black
+            };
+
+            KotostWindows.Controls.Add(KotostLabel);
+            KotostWindows.ShowDialog(this);
         }
     }
 }
