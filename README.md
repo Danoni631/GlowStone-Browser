@@ -15,3 +15,4 @@ You need install WebView2 to run and edit this browser
 ### Overview
 <p align="center"><img src="scrshot.png"></p>
 <p align="center"><img src="scrshot2.png"></p>
+<p align="center"><img src="scrshot3.png"></p>
